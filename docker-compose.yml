@@ -1,0 +1,159 @@
+# version: '3.8'
+
+# services:
+#   # Laravel (PHP-FPM) Service
+#   laravel:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     container_name: laravel-app
+#     ports:
+#       - "9000:80"
+#     volumes:
+#       - .:/var/www
+#       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+#     networks:
+#       - app-network
+#     depends_on:
+#       - db
+#     environment:
+#       - DB_CONNECTION=mysql
+#       - DB_HOST=db
+#       - DB_PORT=3306
+#       - DB_DATABASE=laravel
+#       - DB_USERNAME=root
+#       - DB_PASSWORD=
+
+#   # Vue.js (Node.js) Service
+#   vuejs:
+#     build:
+#       context: ./frontend # Point to your Vue.js frontend directory
+#     container_name: vue-app
+#     volumes:
+#       - ./frontend:/app
+#     ports:
+#       - "8080:8080"
+#     networks:
+#       - app-network
+#     environment:
+#       - VITE_BACKEND=http://127.0.0.1:9000
+
+#   # MySQL Database Service
+#   db:
+#     image: mysql:5.7
+#     container_name: mysql-db
+#     restart: always
+#     environment:
+#       MYSQL_ROOT_PASSWORD: root
+#       MYSQL_DATABASE: laravel
+#       MYSQL_USER: MYSQL_ALLOW_EMPTY_PASSWORD
+#       MYSQL_PASSWORD: 
+#     volumes:
+#       - dbdata:/var/lib/mysql
+#     networks:
+#       - app-network
+#     ports:
+#       - "3306:3306"
+
+#   # Nginx Web Server Service
+#   nginx:
+#     image: nginx:alpine
+#     container_name: nginx-web
+#     volumes:
+#       - .:/var/www
+#       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+#     ports:
+#       - "80:80"
+#     networks:
+#       - app-network
+#     depends_on:
+#       - laravel
+#       - vuejs
+
+# # Define shared networks and volumes
+# networks:
+#   app-network:
+#     driver: bridge
+
+# volumes:
+#   dbdata:
+#     driver: local
+version: '3.8'
+
+services:
+  # Laravel (PHP-FPM) Service
+  laravel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel-app
+    volumes:
+      - .:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - app-network
+    depends_on:
+      - db
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=laravel
+      - DB_USERNAME=root
+      - DB_PASSWORD=
+    
+  # Vue.js (Node.js) Service
+  vuejs:
+    build:
+      context: ./frontend # Path to your Vue.js frontend directory
+    container_name: vue-app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "8080:8080" # Vue dev server
+    networks:
+      - app-network
+    environment:
+      - VITE_BACKEND=http://localhost/api  # Update this to call API through Nginx
+
+  # MySQL Database Service
+  db:
+    image: mysql:5.7
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: MYSQL_ALLOW_EMPTY_PASSWORD
+      MYSQL_PASSWORD: 
+      SANCTUM_STATEFUL_DOMAINS: localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,127.0.0.1:8080,::1, localhost:5173
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - app-network
+    ports:
+      - "3306:3306"
+
+  # Nginx Web Server Service
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-web
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf # Ensure proper nginx.conf location
+    ports:
+      - "80:80" # Nginx exposes port 80
+    networks:
+      - app-network
+    depends_on:
+      - laravel
+      - vuejs
+
+# Define shared networks and volumes
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
